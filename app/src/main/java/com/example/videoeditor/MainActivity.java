@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
         video = findViewById(R.id.video);
         button = findViewById(R.id.button);
-        
+
         registerResult();
 
         button.setOnClickListener(v -> pickVideo());
