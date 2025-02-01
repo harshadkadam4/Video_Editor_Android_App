@@ -30,10 +30,13 @@ android {
 
 dependencies {
 
-    implementation("androidx.activity:activity:1.10.0")
-    implementation "androidx.media3:media3-transformer:1.5.1"
-    implementation "androidx.media3:media3-effect:1.5.1"
-    implementation "androidx.media3:media3-common:1.5.1"
+    implementation(libs.activity)
+    implementation libs.androidx.media3.exoplayer
+    implementation libs.androidx.media3.ui
+    implementation libs.androidx.media3.transformer.v120
+    implementation libs.androidx.media3.transformer
+    implementation libs.androidx.media3.effect
+    implementation libs.media3.common
     implementation libs.appcompat
     implementation libs.material
     implementation libs.activity

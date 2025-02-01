@@ -9,10 +9,10 @@
 
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/selectVideo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="16dp"
         android:backgroundTint="#8A0D0D"
         android:fontFamily="@font/poppins_regular"
         android:text="Select Video"
@@ -23,14 +23,13 @@
         app:layout_constraintTop_toBottomOf="@+id/layout" />
 
     <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="167dp"
-        android:layout_height="97dp"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="28dp"
-        android:onClick="Trim"
+        android:id="@+id/trim"
+        android:layout_width="137dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="44dp"
+        android:layout_marginTop="32dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button"
+        app:layout_constraintTop_toBottomOf="@+id/selectVideo"
         app:srcCompat="@drawable/trim" />
 
     <RelativeLayout
@@ -42,7 +41,8 @@
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:context=".MainActivity">
+        tools:context=".MainActivity"
+        android:backgroundTint="@color/black">
 
         <VideoView
             android:id="@+id/video"
@@ -59,12 +59,12 @@
 
     <ImageView
         android:id="@+id/imageView2"
-        android:layout_width="200dp"
-        android:layout_height="92dp"
+        android:layout_width="161dp"
+        android:layout_height="68dp"
         android:layout_marginTop="32dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="48dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button"
+        app:layout_constraintTop_toBottomOf="@+id/selectVideo"
         app:srcCompat="@drawable/crop_1" />
 
     <TextView
@@ -72,26 +72,57 @@
         android:layout_width="82dp"
         android:layout_height="28dp"
         android:layout_marginStart="72dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/poppins_regular"
         android:gravity="center"
         android:text="TRIM"
         android:textSize="20dp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/imageView" />
+        app:layout_constraintTop_toBottomOf="@+id/trim" />
 
     <TextView
         android:layout_width="82dp"
         android:layout_height="28dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/poppins_regular"
         android:gravity="center"
         android:text="CROP"
         android:textSize="20dp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintHorizontal_bias="0.531"
         app:layout_constraintStart_toEndOf="@+id/textView"
         app:layout_constraintTop_toBottomOf="@+id/imageView2" />
+
+
+    <com.google.android.material.slider.RangeSlider
+        android:id="@+id/slider"
+        android:layout_width="352dp"
+        android:layout_height="33dp"
+        android:layout_marginTop="120dp"
+        android:valueFrom="0"
+        android:valueTo="1"
+        app:labelBehavior="withinBounds"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.525"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/selectVideo"
+         />
+
+    <Button
+        android:id="@+id/save"
+        android:layout_width="91dp"
+        android:layout_height="41dp"
+        android:layout_marginTop="28dp"
+        android:backgroundTint="#8A0D0D"
+        android:fontFamily="@font/poppins_regular"
+        android:text="SAVE"
+        android:textSize="14dp"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.912"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
