@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.videoeditor"
-        minSdk 24
+        minSdk 23
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -31,14 +31,12 @@ android {
 dependencies {
 
     implementation(libs.activity)
-    implementation libs.androidx.media3.exoplayer
-    implementation libs.androidx.media3.ui
-    implementation libs.androidx.media3.transformer.v120
-    implementation libs.androidx.media3.transformer
-    implementation libs.androidx.media3.effect
-    implementation libs.media3.common
     implementation libs.appcompat
     implementation libs.material
+    implementation libs.androidx.media3.exoplayer.v151
+    implementation libs.androidx.media3.transformer
+    implementation 'androidx.media3:media3-exoplayer:1.2.0'
+    implementation 'androidx.media3:media3-ui:1.2.0'
     implementation libs.activity
     implementation libs.constraintlayout
     testImplementation libs.junit
