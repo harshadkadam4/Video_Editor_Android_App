@@ -52,6 +52,8 @@ import androidx.media3.ui.PlayerView;
 import com.google.android.material.slider.RangeSlider;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 
@@ -101,9 +103,38 @@ public class MainActivity extends AppCompatActivity {
                 float startMs = slider.getValues().get(0) * 1000;
                 float endMs = slider.getValues().get(1) * 1000;
 
-
                 String inputPath = getRealPathFromVideoURI(this,inputUri);
                 boolean success = VideoTrimmer.trimVideo(inputPath, videoFile.getAbsolutePath(), (long)startMs, (long) endMs);
+
+                if (success) {
+                    Toast.makeText(this, "Saved in Cache", Toast.LENGTH_SHORT).show();
+
+                    Uri cacheVideUri = Uri.fromFile(videoFile);
+                    MediaItem mediaItem = MediaItem.fromUri(cacheVideUri);
+
+                    player.setMediaItem(mediaItem);
+                    player.prepare();
+
+                    player.addListener(new Player.Listener() {
+                        @Override
+                        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                            if(playbackState == Player.STATE_READY)
+                            {
+                                long durationMs = player.getDuration();
+
+                                if(durationMs != C.TIME_UNSET)
+                                {
+                                    slider.setValueTo(durationMs / 1000f);
+                                    slider.setValues(0f, durationMs / 1000f);
+                                }
+                                player.play();
+                            }
+                        }
+                    });
+
+                } else {
+                    Toast.makeText(this, "Error - Cache Saving", Toast.LENGTH_SHORT).show();
+                }
             }
 
         /*    if(inputUri != null)
@@ -121,6 +152,35 @@ public class MainActivity extends AppCompatActivity {
         });
 
         save.setOnClickListener(v -> {
+            File cacheDir = this.getCacheDir();
+            File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+
+            String outputPath = "/storage/emulated/0/Movies/output_trimmed.mp4";
+            File outputFile = new File(outputPath);
+
+            try {
+                FileInputStream fis = new FileInputStream(cachedVideoFile);
+                FileOutputStream fos = new FileOutputStream(outputFile);
+
+                byte[] buffer = new byte[1024];
+                int length;
+
+                while((length = fis.read(buffer)) > 0)
+                {
+                    fos.write(buffer, 0, length);
+                }
+
+                Toast.makeText(this, "Saved in Movies Folder", Toast.LENGTH_SHORT).show();
+                fis.close();
+                fos.close();
+
+            }catch (IOException e)
+            {
+                e.printStackTrace();
+                Toast.makeText(this, "Error in Saving", Toast.LENGTH_SHORT).show();
+            }
+
+            /*
             String inputPath = getRealPathFromVideoURI(this,inputUri);
             String outputPath = "/storage/emulated/0/Movies/output_trimmed.mp4";
 
@@ -133,6 +193,8 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
             }
+
+             */
 
         });
 

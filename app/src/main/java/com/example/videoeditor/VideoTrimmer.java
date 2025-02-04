@@ -6,7 +6,6 @@ import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,49 +14,89 @@ public class VideoTrimmer {
 
     @SuppressLint("WrongConstant")
     public static boolean trimVideo(String inputPath, String outputPath, long startMs, long endMs) {
-        MediaExtractor extractor = new MediaExtractor();
+        MediaExtractor videoExtractor = new MediaExtractor();
+        MediaExtractor audioExtractor = new MediaExtractor();
         try {
-            extractor.setDataSource(inputPath);
-            int trackIndex = selectTrack(extractor);
-            if (trackIndex < 0) {
+            // Set data sources for both video and audio
+            videoExtractor.setDataSource(inputPath);
+            audioExtractor.setDataSource(inputPath);
+
+            // Select the video track
+            int videoTrackIndex = selectTrack(videoExtractor, "video/");
+            if (videoTrackIndex < 0) {
                 Log.e("VideoTrimmer", "No video track found in file");
                 return false;
             }
+            videoExtractor.selectTrack(videoTrackIndex);
+            MediaFormat videoFormat = videoExtractor.getTrackFormat(videoTrackIndex);
 
-            extractor.selectTrack(trackIndex);
-            MediaFormat format = extractor.getTrackFormat(trackIndex);
+            // Select the audio track
+            int audioTrackIndex = selectTrack(audioExtractor, "audio/");
+            if (audioTrackIndex < 0) {
+                Log.e("VideoTrimmer", "No audio track found in file");
+                return false;
+            }
+            audioExtractor.selectTrack(audioTrackIndex);
+            MediaFormat audioFormat = audioExtractor.getTrackFormat(audioTrackIndex);
 
-            // Initialize MediaMuxer
+            // Initialize MediaMuxer for the output file
             MediaMuxer muxer = new MediaMuxer(outputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int videoTrackIndex = muxer.addTrack(format);
+
+            // Add both video and audio tracks to the muxer
+            int videoOutputTrackIndex = muxer.addTrack(videoFormat);
+            int audioOutputTrackIndex = muxer.addTrack(audioFormat);
+
             muxer.start();
 
-            // Seek to the start time
-            extractor.seekTo(startMs * 1000, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
+            // Seek to the start time for both video and audio
+            videoExtractor.seekTo(startMs * 1000, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
+            audioExtractor.seekTo(startMs * 1000, MediaExtractor.SEEK_TO_CLOSEST_SYNC);
 
-            ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
-            MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
+            ByteBuffer videoBuffer = ByteBuffer.allocate(1024 * 1024);
+            ByteBuffer audioBuffer = ByteBuffer.allocate(1024 * 1024);
 
+            MediaCodec.BufferInfo videoBufferInfo = new MediaCodec.BufferInfo();
+            MediaCodec.BufferInfo audioBufferInfo = new MediaCodec.BufferInfo();
+
+            // Process video and audio
             while (true) {
-                int sampleSize = extractor.readSampleData(buffer, 0);
-                if (sampleSize < 0) break; // End of stream
+                // Read video sample
+                int videoSampleSize = videoExtractor.readSampleData(videoBuffer, 0);
+                if (videoSampleSize < 0) break; // End of stream
 
-                long sampleTimeUs = extractor.getSampleTime();
-                if (sampleTimeUs > endMs * 1000) break; // Stop when reaching the end time
+                long videoSampleTimeUs = videoExtractor.getSampleTime();
+                if (videoSampleTimeUs > endMs * 1000) break; // Stop when reaching the end time
 
-                bufferInfo.size = sampleSize;
-                bufferInfo.presentationTimeUs = sampleTimeUs;
-                bufferInfo.flags = extractor.getSampleFlags();
-                bufferInfo.offset = 0;
+                videoBufferInfo.size = videoSampleSize;
+                videoBufferInfo.presentationTimeUs = videoSampleTimeUs;
+                videoBufferInfo.flags = videoExtractor.getSampleFlags();
+                videoBufferInfo.offset = 0;
 
-                muxer.writeSampleData(videoTrackIndex, buffer, bufferInfo);
-                extractor.advance();
+                muxer.writeSampleData(videoOutputTrackIndex, videoBuffer, videoBufferInfo);
+                videoExtractor.advance();
+
+                // Read audio sample
+                int audioSampleSize = audioExtractor.readSampleData(audioBuffer, 0);
+                if (audioSampleSize < 0) break; // End of stream
+
+                long audioSampleTimeUs = audioExtractor.getSampleTime();
+                if (audioSampleTimeUs > endMs * 1000) break; // Stop when reaching the end time
+
+                audioBufferInfo.size = audioSampleSize;
+                audioBufferInfo.presentationTimeUs = audioSampleTimeUs;
+                audioBufferInfo.flags = audioExtractor.getSampleFlags();
+                audioBufferInfo.offset = 0;
+
+                muxer.writeSampleData(audioOutputTrackIndex, audioBuffer, audioBufferInfo);
+                audioExtractor.advance();
             }
 
             muxer.stop();
             muxer.release();
-            extractor.release();
-            Log.d("VideoTrimmer", "Video trimmed successfully: " + outputPath);
+            videoExtractor.release();
+            audioExtractor.release();
+
+            Log.d("VideoTrimmer", "Video and Audio trimmed successfully: " + outputPath);
             return true;
 
         } catch (IOException e) {
@@ -66,11 +105,11 @@ public class VideoTrimmer {
         }
     }
 
-    private static int selectTrack(MediaExtractor extractor) {
+    private static int selectTrack(MediaExtractor extractor, String mimePrefix) {
         for (int i = 0; i < extractor.getTrackCount(); i++) {
             MediaFormat format = extractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
-            if (mime.startsWith("video/")) {
+            if (mime.startsWith(mimePrefix)) {
                 return i;
             }
         }
