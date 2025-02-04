@@ -93,7 +93,20 @@ public class MainActivity extends AppCompatActivity {
         selectVideo.setOnClickListener(v -> pickVideo());
 
         trim.setOnClickListener(v -> {
-            if(inputUri != null)
+
+            if(inputUri != null) {
+                File cacheDir = this.getCacheDir(); // Get cache directory
+                File videoFile = new File(cacheDir, "cached_video.mp4"); // Create file in cache
+
+                float startMs = slider.getValues().get(0) * 1000;
+                float endMs = slider.getValues().get(1) * 1000;
+
+
+                String inputPath = getRealPathFromVideoURI(this,inputUri);
+                boolean success = VideoTrimmer.trimVideo(inputPath, videoFile.getAbsolutePath(), (long)startMs, (long) endMs);
+            }
+
+        /*    if(inputUri != null)
             {
                 float startMs = slider.getValues().get(0) * 1000;
                 float endMs = slider.getValues().get(1) * 1000;
@@ -103,6 +116,24 @@ public class MainActivity extends AppCompatActivity {
             else{
                 Toast.makeText(this, "Select Video", Toast.LENGTH_SHORT).show();
             }
+
+         */
+        });
+
+        save.setOnClickListener(v -> {
+            String inputPath = getRealPathFromVideoURI(this,inputUri);
+            String outputPath = "/storage/emulated/0/Movies/output_trimmed.mp4";
+
+            float startMs = slider.getValues().get(0) * 1000;
+            float endMs = slider.getValues().get(1) * 1000;
+
+            boolean success = VideoTrimmer.trimVideo(inputPath, outputPath, (long)startMs, (long) endMs); // Trim from 5s to 15s
+            if (success) {
+                Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Error", Toast.LENGTH_SHORT).show();
+            }
+
         });
 
     }
@@ -116,40 +147,40 @@ public class MainActivity extends AppCompatActivity {
 
     private void registerResult() {
         resultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), new ActivityResultCallback<ActivityResult>() {
-            @Override
-            public void onActivityResult(ActivityResult result) {
-                if (result.getData() != null && result.getData().getData() != null) {
-                    Uri videoUri = result.getData().getData();
-                    inputUri = videoUri;
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getData() != null && result.getData().getData() != null) {
+                            Uri videoUri = result.getData().getData();
+                            inputUri = videoUri;
 
-                    // Duration Calculation
-                    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-                    retriever.setDataSource(getApplicationContext(), videoUri);
-                    String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-                    long timeMillisec = Long.parseLong(time);
-                    float timeInsec = timeMillisec / 1000f;
+                            // Duration Calculation
+                            MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+                            retriever.setDataSource(getApplicationContext(), videoUri);
+                            String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                            long timeMillisec = Long.parseLong(time);
+                            float timeInsec = timeMillisec / 1000f;
 
-                    //float timeInsec = video.getDuration();
-                    slider.setValueTo(timeInsec);
-                    slider.setValues(0f, timeInsec);
+                            //float timeInsec = video.getDuration();
+                            slider.setValueTo(timeInsec);
+                            slider.setValues(0f, timeInsec);
 
-                    MediaItem mediaItem = new MediaItem.Builder().setUri(videoUri).build();
-                    player.setMediaItem(mediaItem);
-                    player.prepare();
-                    player.play();
-                    //video.start();
-                    save.setVisibility(View.VISIBLE);
-                    slider.setVisibility(View.VISIBLE);
-                    trim.setVisibility(View.VISIBLE);
-                    crop.setVisibility(View.VISIBLE);
-                    tv_trim.setVisibility(View.VISIBLE);
-                    tv_crop.setVisibility(View.VISIBLE);
+                            MediaItem mediaItem = new MediaItem.Builder().setUri(videoUri).build();
+                            player.setMediaItem(mediaItem);
+                            player.prepare();
+                            player.play();
+                            //video.start();
+                            save.setVisibility(View.VISIBLE);
+                            slider.setVisibility(View.VISIBLE);
+                            trim.setVisibility(View.VISIBLE);
+                            crop.setVisibility(View.VISIBLE);
+                            tv_trim.setVisibility(View.VISIBLE);
+                            tv_crop.setVisibility(View.VISIBLE);
 
-                } else {
-                    Toast.makeText(MainActivity.this, "Video Not Selected", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(MainActivity.this, "Video Not Selected", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 }
-            }
-        }
         );
     }
 
@@ -185,8 +216,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-}
+    public String getRealPathFromVideoURI(Context context, Uri videoUri) {
+        String[] projection = { MediaStore.Video.Media.DATA };
+        try (Cursor cursor = context.getContentResolver().query(videoUri, projection, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
+                return cursor.getString(columnIndex);
+            }
+        }
+        return null;
+    }
 
+
+}
 
 
 

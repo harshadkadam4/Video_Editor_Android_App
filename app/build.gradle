@@ -30,13 +30,12 @@ android {
 
 dependencies {
 
-    implementation(libs.activity)
+    implementation (libs.activity)
     implementation libs.appcompat
     implementation libs.material
     implementation libs.androidx.media3.exoplayer.v151
     implementation libs.androidx.media3.transformer
-    implementation 'androidx.media3:media3-exoplayer:1.2.0'
-    implementation 'androidx.media3:media3-ui:1.2.0'
+    implementation libs.androidx.media3.ui.v151
     implementation libs.activity
     implementation libs.constraintlayout
     testImplementation libs.junit

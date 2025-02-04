@@ -12,6 +12,8 @@ constraintlayout = "2.2.0"
 media3Common = "1.5.1"
 media3Exoplayer = "1.5.1"
 media3Transformer = "1.2.0"
+media3Ui = "1.5.1"
+mobileFfmpegFull = "4.4"
 
 [libraries]
 androidx-media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3Common" }
@@ -20,6 +22,7 @@ androidx-media3-exoplayer-v151 = { module = "androidx.media3:media3-exoplayer", 
 androidx-media3-transformer = { module = "androidx.media3:media3-transformer", version.ref = "media3Common" }
 androidx-media3-transformer-v120 = { module = "androidx.media3:media3-transformer", version.ref = "media3Transformer" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Transformer" }
+androidx-media3-ui-v151 = { module = "androidx.media3:media3-ui", version.ref = "media3Ui" }
 isoparser = { module = "com.googlecode.mp4parser:isoparser", version.ref = "isoparser" }
 isoparser-v106 = { module = "com.googlecode.mp4parser:isoparser", version.ref = "isoparserVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -30,6 +33,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 media3-common = { module = "androidx.media3:media3-common", version.ref = "media3Common" }
+mobile-ffmpeg-full = { module = "com.arthenica:mobile-ffmpeg-full", version.ref = "mobileFfmpegFull" }
 mp4parser = { module = "com.googlecode.mp4parser:mp4parser", version.ref = "isoparser" }
 
 [plugins]
