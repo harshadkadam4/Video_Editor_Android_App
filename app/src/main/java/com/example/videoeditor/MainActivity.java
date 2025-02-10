@@ -69,11 +69,10 @@ public class MainActivity extends AppCompatActivity {
     RangeSlider slider;
     ImageView trim, crop;
     TextView tv_trim, tv_crop,startSec,endSec;
-
-    Uri inputUri;
+    private FileOp fileOp;
+    //Uri inputUri;
 
     ActivityResultLauncher<Intent> resultLauncher;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
-
         registerResult();
 
         selectVideo.setOnClickListener(v -> pickVideo());
@@ -109,46 +107,47 @@ public class MainActivity extends AppCompatActivity {
         });
 
         trim.setOnClickListener(v -> {
-                float startMs = slider.getValues().get(0) * 1000;
-                float endMs = slider.getValues().get(1) * 1000;
+            float startMs = slider.getValues().get(0) * 1000;
+            float endMs = slider.getValues().get(1) * 1000;
 
             File cacheDir = this.getCacheDir();
             File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+            File copyCachedVideoFile = new File(cacheDir,"copy_cached_video.mp4");
 
+            fileOp = new FileOp();
+            fileOp.copyFile(cachedVideoFile,copyCachedVideoFile);
 
-            String inputPath = getRealPathFromVideoURI(this,inputUri);
-            boolean success = VideoTrimmer.trimVideo(inputPath, cachedVideoFile.getAbsolutePath(), (long)startMs, (long) endMs);
+            //String inputPath = getRealPathFromVideoURI(this,inputUri);
+            boolean success = VideoTrimmer.trimVideo(copyCachedVideoFile.getAbsolutePath(), cachedVideoFile.getAbsolutePath(), (long)startMs, (long) endMs);
 
+            if (success) {
+                Toast.makeText(this, "Saved in Cache", Toast.LENGTH_SHORT).show();
 
-                if (success) {
-                    Toast.makeText(this, "Saved in Cache", Toast.LENGTH_SHORT).show();
+                Uri cacheVideUri = Uri.fromFile(cachedVideoFile);
 
-                    Uri cacheVideUri = Uri.fromFile(cachedVideoFile);
+                //inputUri = FileProvider.getUriForFile(this,"com.example.videoeditor.fileprovider",cachedVideoFile);
+                MediaItem mediaItem = MediaItem.fromUri(cacheVideUri);
 
-                    //inputUri = FileProvider.getUriForFile(this,"com.example.videoeditor.fileprovider",cachedVideoFile);
-                    MediaItem mediaItem = MediaItem.fromUri(cacheVideUri);
+                player.setMediaItem(mediaItem);
+                player.prepare();
+                player.addListener(new Player.Listener() {
+                    @Override
+                    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                        if(playbackState == Player.STATE_READY)
+                        {
+                            long durationMs = player.getDuration();
 
-                    player.setMediaItem(mediaItem);
-                    player.prepare();
-
-                    player.addListener(new Player.Listener() {
-                        @Override
-                        public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                            if(playbackState == Player.STATE_READY)
+                            if(durationMs != C.TIME_UNSET)
                             {
-                                long durationMs = player.getDuration();
-
-                                if(durationMs != C.TIME_UNSET)
-                                {
-                                    slider.setValueTo(durationMs / 1000f);
-                                    slider.setValues(0f, durationMs / 1000f);
-                                    startSec.setText(slider.getValues().get(0).toString());
-                                    endSec.setText(slider.getValues().get(1).toString());
-                                }
-                                player.play();
+                                slider.setValueTo(durationMs / 1000f);
+                                slider.setValues(0f, durationMs / 1000f);
+                                startSec.setText(slider.getValues().get(0).toString());
+                                endSec.setText(slider.getValues().get(1).toString());
                             }
+                            player.play();
                         }
-                    });
+                    }
+                });
             }
 
         /*    if(inputUri != null)
@@ -226,22 +225,20 @@ public class MainActivity extends AppCompatActivity {
                     public void onActivityResult(ActivityResult result) {
                         if (result.getData() != null && result.getData().getData() != null) {
                             Uri videoUri = result.getData().getData();
-                            inputUri = videoUri;
+                            //inputUri = videoUri;
 
                             // Load file in Cache
-//                            try {
-//                                File cacheDir = getApplicationContext().getCacheDir();
-//                                File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
-//
-//                                FileOp.copyUriToFile(MainActivity.this,videoUri,cachedVideoFile);
-//                            } catch (IOException e)
-//                            {
-//                                e.printStackTrace();
-//                            }
+                            try {
+                                File cacheDir = getApplicationContext().getCacheDir();
+                                File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
 
+                                FileOp.copyUriToFile(MainActivity.this,videoUri,cachedVideoFile);
+                            } catch (IOException e)
+                            {
+                                e.printStackTrace();
+                            }
 
                             // Duration Calculation
-
                             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
                             retriever.setDataSource(getApplicationContext(), videoUri);
                             String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
