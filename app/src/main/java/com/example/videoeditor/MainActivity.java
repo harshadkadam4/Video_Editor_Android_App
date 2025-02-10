@@ -3,6 +3,7 @@ package com.example.videoeditor;
 import static android.content.ContentValues.TAG;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
@@ -11,8 +12,10 @@ import android.media.browse.MediaBrowser;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.MediaController;
 import android.widget.TextView;
@@ -21,6 +24,7 @@ import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.FileProvider;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
@@ -69,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     RangeSlider slider;
     ImageView trim, crop;
     TextView tv_trim, tv_crop,startSec,endSec;
-    private FileOp fileOp;
+    private FileOp fileOp = new FileOp();
     //Uri inputUri;
 
     ActivityResultLauncher<Intent> resultLauncher;
@@ -114,7 +118,6 @@ public class MainActivity extends AppCompatActivity {
             File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
             File copyCachedVideoFile = new File(cacheDir,"copy_cached_video.mp4");
 
-            fileOp = new FileOp();
             fileOp.copyFile(cachedVideoFile,copyCachedVideoFile);
 
             //String inputPath = getRealPathFromVideoURI(this,inputUri);
@@ -165,33 +168,35 @@ public class MainActivity extends AppCompatActivity {
         });
 
         save.setOnClickListener(v -> {
-            String outputPath = "/storage/emulated/0/Movies/output_trimmed.mp4";
-            File outputFile = new File(outputPath);
 
-            File cacheDir = this.getCacheDir();
-            File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+            AlertDialog.Builder builder =new AlertDialog.Builder(this);
+            builder.setTitle("Enter File Name");
 
-            try {
-                FileInputStream fis = new FileInputStream(cachedVideoFile);
-                FileOutputStream fos = new FileOutputStream(outputFile);
+            final EditText input = new EditText(this);
 
-                byte[] buffer = new byte[1024];
-                int length;
+            input.setInputType(InputType.TYPE_CLASS_TEXT);
+            builder.setView(input);
 
-                while((length = fis.read(buffer)) > 0)
-                {
-                    fos.write(buffer, 0, length);
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String outputPath = "/storage/emulated/0/Movies/"+input.getText().toString()+".mp4";
+                    File outputFile = new File(outputPath);
+
+                    File cacheDir = getApplicationContext().getCacheDir();
+                    File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+
+                    fileOp.saveFile(MainActivity.this, cachedVideoFile, outputFile);
                 }
+            });
 
-                Toast.makeText(this, "Saved in Movies Folder", Toast.LENGTH_SHORT).show();
-                fis.close();
-                fos.close();
-
-            }catch (IOException e)
-            {
-                e.printStackTrace();
-                Toast.makeText(this, "Error in Saving", Toast.LENGTH_SHORT).show();
-            }
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+            builder.show();
 
             /*
             String inputPath = getRealPathFromVideoURI(this,inputUri);

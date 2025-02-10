@@ -3,6 +3,7 @@ package com.example.videoeditor;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,6 +58,31 @@ public class FileOp {
         catch (IOException e)
         {
             Log.e("FileCopy", "Error copying file: " + e.getMessage());
+        }
+    }
+
+    public void saveFile(Context context,File cachedVideoFile,File outputFile)
+    {
+        try {
+            FileInputStream fis = new FileInputStream(cachedVideoFile);
+            FileOutputStream fos = new FileOutputStream(outputFile);
+
+            byte[] buffer = new byte[1024];
+            int length;
+
+            while((length = fis.read(buffer)) > 0)
+            {
+                fos.write(buffer, 0, length);
+            }
+
+            Toast.makeText(context, "Saved in Movies Folder", Toast.LENGTH_SHORT).show();
+            fis.close();
+            fos.close();
+
+        }catch (IOException e)
+        {
+            e.printStackTrace();
+            Toast.makeText(context, "Error in Saving", Toast.LENGTH_SHORT).show();
         }
     }
 
