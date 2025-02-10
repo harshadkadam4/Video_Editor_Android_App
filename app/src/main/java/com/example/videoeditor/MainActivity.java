@@ -11,8 +11,10 @@ import android.media.MediaPlayer;
 import android.media.browse.MediaBrowser;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.InputType;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -29,7 +31,6 @@ import androidx.core.content.FileProvider;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
-import androidx.media3.common.util.Log;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.common.util.Util;
 import androidx.media3.exoplayer.ExoPlayer;
@@ -60,6 +61,7 @@ import com.google.android.material.slider.RangeSlider;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -120,6 +122,25 @@ public class MainActivity extends AppCompatActivity {
 
             fileOp.copyFile(cachedVideoFile,copyCachedVideoFile);
 
+            //FFMPEG command in text file
+            File externalDir = getExternalFilesDir(Environment.DIRECTORY_MOVIES);
+            File ffmpegCommandFile = new File(externalDir, "ffmpeg_command.txt");
+
+            try {
+                String startTime = ffTimeString(startMs);
+                String endTime = ffTimeString(endMs);
+
+                FileWriter writer = new FileWriter(ffmpegCommandFile);
+                writer.write("ffmpeg -i "+copyCachedVideoFile.getAbsolutePath()+" -ss "+startTime+" -to "+endTime+" -c:v copy -c:a copy "+cachedVideoFile.getAbsolutePath());
+                writer.close();
+                Toast.makeText(this, "Created "+ffmpegCommandFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+            }
+            catch (IOException e)
+            {
+                Toast.makeText(this, ""+e, Toast.LENGTH_SHORT).show();
+            }
+
+
             //String inputPath = getRealPathFromVideoURI(this,inputUri);
             boolean success = VideoTrimmer.trimVideo(copyCachedVideoFile.getAbsolutePath(), cachedVideoFile.getAbsolutePath(), (long)startMs, (long) endMs);
 
@@ -151,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+
+
             }
 
         /*    if(inputUri != null)
@@ -342,6 +365,16 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return filePath;
+    }
+
+    public String ffTimeString(float milliSec)
+    {
+        int hours = (int) (milliSec / (1000 * 60 *60));
+        int minutes = (int) ((milliSec % (1000 * 60 *60)) / (1000 * 60));
+        int seconds = (int) ((milliSec % (1000 * 60)) / 1000);
+        int milliSeconds = (int) (milliSec % 1000);
+
+        return String.format("%02d:%02d:%02d:%02d",hours,minutes,seconds,milliSeconds);
     }
 
 }
