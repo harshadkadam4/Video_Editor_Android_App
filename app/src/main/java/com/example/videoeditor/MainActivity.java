@@ -19,7 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
+import androidx.core.content.FileProvider;
 import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -55,6 +57,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -65,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     Button selectVideo, save;
     RangeSlider slider;
     ImageView trim, crop;
-    TextView tv_trim, tv_crop;
+    TextView tv_trim, tv_crop,startSec,endSec;
 
     Uri inputUri;
 
@@ -86,30 +89,43 @@ public class MainActivity extends AppCompatActivity {
         crop = findViewById(R.id.crop);
         tv_trim = findViewById(R.id.tv_trim);
         tv_crop = findViewById(R.id.tv_crop);
+        startSec = findViewById(R.id.startSec);
+        endSec = findViewById(R.id.endSec);
 
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
+
 
         registerResult();
 
         selectVideo.setOnClickListener(v -> pickVideo());
 
+        slider.addOnChangeListener(new RangeSlider.OnChangeListener() {
+            @Override
+            public void onValueChange(@NonNull RangeSlider slider, float value, boolean fromUser) {
+                startSec.setText(slider.getValues().get(0).toString());
+                endSec.setText(slider.getValues().get(1).toString());
+            }
+        });
+
         trim.setOnClickListener(v -> {
-
-            if(inputUri != null) {
-                File cacheDir = this.getCacheDir(); // Get cache directory
-                File videoFile = new File(cacheDir, "cached_video.mp4"); // Create file in cache
-
                 float startMs = slider.getValues().get(0) * 1000;
                 float endMs = slider.getValues().get(1) * 1000;
 
-                String inputPath = getRealPathFromVideoURI(this,inputUri);
-                boolean success = VideoTrimmer.trimVideo(inputPath, videoFile.getAbsolutePath(), (long)startMs, (long) endMs);
+            File cacheDir = this.getCacheDir();
+            File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+
+
+            String inputPath = getRealPathFromVideoURI(this,inputUri);
+            boolean success = VideoTrimmer.trimVideo(inputPath, cachedVideoFile.getAbsolutePath(), (long)startMs, (long) endMs);
+
 
                 if (success) {
                     Toast.makeText(this, "Saved in Cache", Toast.LENGTH_SHORT).show();
 
-                    Uri cacheVideUri = Uri.fromFile(videoFile);
+                    Uri cacheVideUri = Uri.fromFile(cachedVideoFile);
+
+                    //inputUri = FileProvider.getUriForFile(this,"com.example.videoeditor.fileprovider",cachedVideoFile);
                     MediaItem mediaItem = MediaItem.fromUri(cacheVideUri);
 
                     player.setMediaItem(mediaItem);
@@ -126,15 +142,13 @@ public class MainActivity extends AppCompatActivity {
                                 {
                                     slider.setValueTo(durationMs / 1000f);
                                     slider.setValues(0f, durationMs / 1000f);
+                                    startSec.setText(slider.getValues().get(0).toString());
+                                    endSec.setText(slider.getValues().get(1).toString());
                                 }
                                 player.play();
                             }
                         }
                     });
-
-                } else {
-                    Toast.makeText(this, "Error - Cache Saving", Toast.LENGTH_SHORT).show();
-                }
             }
 
         /*    if(inputUri != null)
@@ -152,11 +166,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         save.setOnClickListener(v -> {
-            File cacheDir = this.getCacheDir();
-            File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
-
             String outputPath = "/storage/emulated/0/Movies/output_trimmed.mp4";
             File outputFile = new File(outputPath);
+
+            File cacheDir = this.getCacheDir();
+            File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
 
             try {
                 FileInputStream fis = new FileInputStream(cachedVideoFile);
@@ -195,7 +209,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
              */
-
         });
 
     }
@@ -215,7 +228,20 @@ public class MainActivity extends AppCompatActivity {
                             Uri videoUri = result.getData().getData();
                             inputUri = videoUri;
 
+                            // Load file in Cache
+//                            try {
+//                                File cacheDir = getApplicationContext().getCacheDir();
+//                                File cachedVideoFile = new File(cacheDir,"cached_video.mp4");
+//
+//                                FileOp.copyUriToFile(MainActivity.this,videoUri,cachedVideoFile);
+//                            } catch (IOException e)
+//                            {
+//                                e.printStackTrace();
+//                            }
+
+
                             // Duration Calculation
+
                             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
                             retriever.setDataSource(getApplicationContext(), videoUri);
                             String time = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
@@ -237,6 +263,11 @@ public class MainActivity extends AppCompatActivity {
                             crop.setVisibility(View.VISIBLE);
                             tv_trim.setVisibility(View.VISIBLE);
                             tv_crop.setVisibility(View.VISIBLE);
+                            startSec.setVisibility(View.VISIBLE);
+                            endSec.setVisibility(View.VISIBLE);
+
+                            startSec.setText(slider.getValues().get(0).toString());
+                            endSec.setText(slider.getValues().get(1).toString());
 
                         } else {
                             Toast.makeText(MainActivity.this, "Video Not Selected", Toast.LENGTH_SHORT).show();
@@ -278,20 +309,40 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public String getRealPathFromVideoURI(Context context, Uri videoUri) {
-        String[] projection = { MediaStore.Video.Media.DATA };
-        try (Cursor cursor = context.getContentResolver().query(videoUri, projection, null, null, null)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                int columnIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
-                return cursor.getString(columnIndex);
-            }
+    private void copyUriToFile(Context context, Uri uri, File file) throws IOException {
+        InputStream inputStream = context.getContentResolver().openInputStream(uri);
+        FileOutputStream outputStream = new FileOutputStream(file);
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
         }
-        return null;
+        inputStream.close();
+        outputStream.close();
     }
 
 
-}
+    public String getRealPathFromVideoURI(Context context, Uri videoUri) {
+        String filePath = null;
+        try {
+            Cursor cursor = context.getContentResolver().query(videoUri, null, null, null, null);
+            if (cursor != null) {
+                int nameIndex = cursor.getColumnIndex(MediaStore.Video.Media.DISPLAY_NAME);
+                if (nameIndex != -1 && cursor.moveToFirst()) {
+                    String fileName = cursor.getString(nameIndex);
+                    File file = new File(context.getCacheDir(), fileName);
+                    copyUriToFile(context, videoUri, file);
+                    filePath = file.getAbsolutePath();
+                }
+                cursor.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filePath;
+    }
 
+}
 
 
 
